@@ -1,6 +1,7 @@
 import logging
 import os
 import sqlite3
+import datetime
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, filters, MessageHandler
 from dotenv import load_dotenv
@@ -26,10 +27,12 @@ logging.basicConfig(
     level=logging.INFO
 )
 
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_chat.id
+    user = update.effective_user.first_name
     conn = sqlite3.connect("casino.db")
     c = conn.cursor()
-    user_id = update.effective_chat.id
     c.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (user_id,))
     conn.commit()
     conn.close()
@@ -40,10 +43,54 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user.first_name
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{user}, Here is the list of the commands:")
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id, 
+        text=f"{user}, Here is the list of the commands:"
+        )
+
+#give the bonus every 24 hours
+async def bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_chat.id
+    user = update.effective_user.first_name
+    time= datetime.datetime.now()
+    bonus_amount = 500 #set the daily bonus
+    conn = sqlite3.connect("casino.db")
+    c = conn.cursor()
+    c.execute("SELECT balance, last_bonus FROM users WHERE user_id=?", (user_id,))
+    row = c.fetchone()
+    saldo, last_bonus = row
+    ora = datetime.datetime.now()  
+    ultimo_bonus = datetime.datetime.fromisoformat(last_bonus) 
+    delta = ora - ultimo_bonus
+    if delta.total_seconds() >= 86400:
+        new_balance = saldo + bonus_amount
+        c.execute(
+            "UPDATE users SET balance=?, last_bonus=? WHERE user_id=?",
+            (new_balance, ora.isoformat(), user_id)
+        )
+        conn.commit()
+        conn.close()
+        await context.bot.send_message(
+            chat_id=user_id,
+            text=f"You just earned {bonus_amount} credits! New balance: {new_balance}"
+        )
+    else:
+        last = datetime.datetime.fromisoformat(last_bonus)
+        time_last = 86400 - (ora - last).total_seconds()
+        h = int(time_last // 3600)
+        m = int((time_last % 3600) // 60)
+        conn.close()
+        await context.bot.send_message(
+            chat_id=user_id,
+            text=f"Hai già preso il bonus oggi! Riprova tra {h}h {m}m."
+        )
+    
 
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I didn't understand this message.")
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id, 
+        text="Sorry, I didn't understand this message."
+    )
 
 if __name__ == '__main__':
     application = ApplicationBuilder().token(TOKEN).build()
@@ -54,6 +101,9 @@ if __name__ == '__main__':
 
     help_handler = CommandHandler('help', help)
     application.add_handler(help_handler)
+
+    bonus_handler = CommandHandler('bonus', bonus)
+    application.add_handler(bonus_handler)
 
     unknown_handler = MessageHandler(filters.TEXT, unknown)
     application.add_handler(unknown_handler)
