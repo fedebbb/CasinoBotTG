@@ -45,7 +45,7 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user.first_name
     await context.bot.send_message(
         chat_id=update.effective_chat.id, 
-        text=f"{user}, Here is the list of the commands:"
+        text=f"{user}, Here is the list of the commands: \n/bonus : take your daily bonus"
         )
 
 #give the bonus every 24 hours
@@ -82,9 +82,22 @@ async def bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
         conn.close()
         await context.bot.send_message(
             chat_id=user_id,
-            text=f"Hai già preso il bonus oggi! Riprova tra {h}h {m}m."
+            text=f"You have already taken your daily bonus! Retry in {h}h {m}m."
         )
     
+async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user.first_name
+    user_id = update.effective_chat.id
+    conn = sqlite3.connect("casino.db")
+    c = conn.cursor()
+    c.execute("SELECT balance FROM users WHERE user_id=?", (user_id,))
+    row = c.fetchone()
+    c.close()
+    balance = row[0] #takes the balance
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id, 
+        text=f"{user}, your balance is {balance} credits"
+        )
 
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
@@ -104,6 +117,9 @@ if __name__ == '__main__':
 
     bonus_handler = CommandHandler('bonus', bonus)
     application.add_handler(bonus_handler)
+
+    balance_handler = CommandHandler('balance', balance)
+    application.add_handler(balance_handler)
 
     unknown_handler = MessageHandler(filters.TEXT, unknown)
     application.add_handler(unknown_handler)
