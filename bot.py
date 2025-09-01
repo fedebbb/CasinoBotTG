@@ -1,5 +1,6 @@
 import logging
 import os
+import sqlite3
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, filters, MessageHandler
 from dotenv import load_dotenv
@@ -7,13 +8,35 @@ from dotenv import load_dotenv
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")  #Telegram API code
 
+#connection to the database SqlLite
+conn = sqlite3.connect("casino.db")
+c = conn.cursor()
+c.execute("""
+CREATE TABLE IF NOT EXISTS users (
+    user_id INTEGER PRIMARY KEY,
+    balance INTEGER DEFAULT 1000,
+    last_bonus TIMESTAMP DEFAULT '2000-01-01T00:00:00'
+    )
+""")
+conn.commit()
+conn.close()
+
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, write /help to see al the features and games!")
+    conn = sqlite3.connect("casino.db")
+    c = conn.cursor()
+    user_id = update.effective_chat.id
+    c.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (user_id,))
+    conn.commit()
+    conn.close()
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id, 
+        text="I'm a bot, write /help to see al the features and games!"
+        )
 
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user.first_name
