@@ -3,7 +3,7 @@ import os
 import sqlite3
 import datetime
 import random
-from telegram import Update
+from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, filters, MessageHandler, ConversationHandler
 from dotenv import load_dotenv
 
@@ -38,10 +38,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     c.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (user_id,))
     conn.commit()
     conn.close()
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id, 
-        text="I'm a bot, write /help to see al the features and games!"
-        )
+    keyboard = [                #start buttons
+        ["/help", "/games"], 
+        ["/bonus", "/balance"], 
+    ]
+    reply_markup = ReplyKeyboardMarkup(
+        keyboard, 
+        resize_keyboard=True,   
+        one_time_keyboard=False 
+    )
+    await update.message.reply_text(
+        "I'm a bot, write /help to see al the features and games!",
+        reply_markup=reply_markup
+    )
 
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user.first_name
