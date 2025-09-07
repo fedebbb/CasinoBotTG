@@ -45,10 +45,10 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user.first_name
     await context.bot.send_message(
         chat_id=update.effective_chat.id, 
-        text=f"{user}, Here is the list of the commands: \n/bonus : take your daily bonus"
+        text=f"{user}, here is the list of the commands: \n/bonus : take your daily bonus \n/balance : see your current balance"
         )
 
-#give the bonus every 24 hours
+#gives the bonus every 24 hours
 async def bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
     user = update.effective_user.first_name
@@ -99,6 +99,13 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text=f"{user}, your balance is {balance} credits"
         )
 
+async def games(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user.first_name
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id, 
+        text=f"{user}, here is the list of the games: \n/coinflip"
+        )
+
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
         chat_id=update.effective_chat.id, 
@@ -120,6 +127,9 @@ if __name__ == '__main__':
 
     balance_handler = CommandHandler('balance', balance)
     application.add_handler(balance_handler)
+
+    games_handler = CommandHandler('games', games)
+    application.add_handler(games_handler)
 
     unknown_handler = MessageHandler(filters.TEXT, unknown)
     application.add_handler(unknown_handler)
