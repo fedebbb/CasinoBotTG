@@ -2,13 +2,15 @@ import logging
 import os
 import sqlite3
 import datetime
+import random
 from telegram import Update
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, filters, MessageHandler
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, filters, MessageHandler, ConversationHandler
 from dotenv import load_dotenv
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")  #Telegram API code
 
+SCELTA = range(1)
 #connection to the database SqlLite
 conn = sqlite3.connect("casino.db")
 c = conn.cursor()
@@ -45,7 +47,7 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user.first_name
     await context.bot.send_message(
         chat_id=update.effective_chat.id, 
-        text=f"{user}, here is the list of the commands: \n/bonus : take your daily bonus \n/balance : see your current balance"
+        text=f"{user}, here is the list of the commands: \n/bonus : take your daily bonus \n/balance : see your current balance \n/games: see the games"
         )
 
 #gives the bonus every 24 hours
@@ -103,8 +105,63 @@ async def games(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user.first_name
     await context.bot.send_message(
         chat_id=update.effective_chat.id, 
-        text=f"{user}, here is the list of the games: \n/coinflip"
+        text=f"{user}, here is the list of the games: \n/coinflip <import>"
         )
+
+async def coinflip(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    #if there arent arguments
+    if not context.args:
+        await update.message.reply_text("You have to add the bet! For example: /bet 100")
+        return
+    #if there are more then one argument
+    if len(context.args) > 1:
+        await update.message.reply_text("Correct use: /coinflip <import>")
+        return
+    try:
+        amount = int(context.args[0])  # first argument
+    except ValueError:
+        await update.message.reply_text("The import must be a number!")
+        return
+    user = update.effective_user.first_name
+    user_id = update.effective_chat.id
+    conn = sqlite3.connect("casino.db")
+    c = conn.cursor()
+    c.execute("SELECT balance FROM users WHERE user_id=?", (user_id,))
+    row = c.fetchone()
+    c.close()
+    balance = row[0] #takes the balance
+    if balance < amount:
+        await update.message.reply_text("You don't have enough credits!")
+        return
+    context.user_data["amount"] = amount
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id, 
+        text=f"{user}, choose between head or tail"
+        )
+    return SCELTA
+
+async def scelta(update, context):
+    user = update.effective_user.first_name
+    user_id = update.effective_chat.id
+    user_choice = update.message.text.lower().strip()
+    if user_choice not in ["head", "tail"]:
+        await update.message.reply_text("You have to choose head or tail.")
+        return SCELTA
+    amount = context.user_data.get("amount", 0)
+    #random choice
+    result = random.choice(["head", "tail"])
+    conn = sqlite3.connect("casino.db")
+    c = conn.cursor()
+    amount2 = amount * 2
+    if user_choice == result:
+        await update.message.reply_text(f"It's {result}! You have won {amount2} credits!")
+        c.execute("UPDATE users SET balance = balance + ? * 2 WHERE user_id=?", (amount, user_id,))
+    else:
+        await update.message.reply_text(f"It's {result}! You have lost {amount} credits...")
+        c.execute("UPDATE users SET balance = balance - ? WHERE user_id=?", (amount, user_id,))
+    conn.commit()
+    conn.close()
+    return ConversationHandler.END
 
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
@@ -130,6 +187,15 @@ if __name__ == '__main__':
 
     games_handler = CommandHandler('games', games)
     application.add_handler(games_handler)
+
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler("coinflip", coinflip)],
+        states={
+            SCELTA: [MessageHandler(filters.TEXT & ~filters.COMMAND, scelta)],
+        },
+        fallbacks = [],
+    )
+    application.add_handler(conv_handler)
 
     unknown_handler = MessageHandler(filters.TEXT, unknown)
     application.add_handler(unknown_handler)
