@@ -85,7 +85,7 @@ async def bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
         conn.close()
         await context.bot.send_message(
             chat_id=user_id,
-            text=f"You just earned {bonus_amount} credits! New balance: {new_balance}"
+            text=f"You just earned {bonus_amount} credits💵 💰! New balance: {new_balance}"
         )
     else:
         last = datetime.datetime.fromisoformat(last_bonus)
@@ -95,7 +95,7 @@ async def bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
         conn.close()
         await context.bot.send_message(
             chat_id=user_id,
-            text=f"You have already taken your daily bonus! Retry in {h}h {m}m."
+            text=f"You have already taken your daily bonus! Retry in {h}h {m}m. ⏰⏰"
         )
     
 async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -109,7 +109,7 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     balance = row[0] #takes the balance
     await context.bot.send_message(
         chat_id=update.effective_chat.id, 
-        text=f"{user}, your balance is {balance} credits"
+        text=f"{user}, your balance is {balance} credits 💵"
         )
 
 async def games(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -122,7 +122,7 @@ async def games(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def coinflip(update: Update, context: ContextTypes.DEFAULT_TYPE):
     #if there arent arguments
     if not context.args:
-        await update.message.reply_text("You have to add the bet! For example: /coinflip 100")
+        await update.message.reply_text("⚠️ You have to add the bet! For example: /coinflip 100")
         return
     #if there are more then one argument
     if len(context.args) > 1:
@@ -131,7 +131,7 @@ async def coinflip(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         amount = int(context.args[0])  # first argument
     except ValueError:
-        await update.message.reply_text("The import must be a number!")
+        await update.message.reply_text("⚠️ The import must be a number!")
         return
     user = update.effective_user.first_name
     user_id = update.effective_chat.id
@@ -147,7 +147,7 @@ async def coinflip(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["amount"] = amount
     await context.bot.send_message(
         chat_id=update.effective_chat.id, 
-        text=f"{user}, choose between head or tail"
+        text=f"✅ {user}, choose between head or tail"
         )
     return SCELTA
 
@@ -156,7 +156,7 @@ async def sceltaFlip(update, context):
     user_id = update.effective_chat.id
     user_choice = update.message.text.lower().strip()
     if user_choice not in ["head", "tail"]:
-        await update.message.reply_text("You have to choose head or tail.")
+        await update.message.reply_text("⚠️ You have to choose head or tail.")
         return SCELTA
     amount = context.user_data.get("amount", 0)
     #random choice
@@ -165,10 +165,10 @@ async def sceltaFlip(update, context):
     c = conn.cursor()
     amount2 = amount * 2
     if user_choice == result:
-        await update.message.reply_text(f"It's {result}! You have won {amount2} credits!")
+        await update.message.reply_text(f"It's {result}! You have won {amount2} credits! 🎉💰")
         c.execute("UPDATE users SET balance = balance + ? * 2 WHERE user_id=?", (amount, user_id,))
     else:
-        await update.message.reply_text(f"It's {result}! You have lost {amount} credits...")
+        await update.message.reply_text(f"😢 It's {result}! You have lost {amount} credits...")
         c.execute("UPDATE users SET balance = balance - ? WHERE user_id=?", (amount, user_id,))
     conn.commit()
     conn.close()
@@ -177,7 +177,7 @@ async def sceltaFlip(update, context):
 async def roulette(update: Update, context: ContextTypes.DEFAULT_TYPE):
     #if there arent arguments
     if not context.args:
-        await update.message.reply_text("You have to add the bet! For example: /roulette 100")
+        await update.message.reply_text("⚠️ You have to add the bet! For example: /roulette 100")
         return
     #if there are more then one argument
     if len(context.args) > 1:
@@ -186,7 +186,7 @@ async def roulette(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         amount = int(context.args[0])  # first argument
     except ValueError:
-        await update.message.reply_text("The import must be a number!")
+        await update.message.reply_text("⚠️ The import must be a number!")
         return
     user = update.effective_user.first_name
     user_id = update.effective_chat.id
@@ -202,7 +202,7 @@ async def roulette(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["amount"] = amount
     await context.bot.send_message(
         chat_id=update.effective_chat.id, 
-        text=f"{user}, place a bet."
+        text=f"✅ {user}, place a bet."
         )
     return SCELTA
 
@@ -228,10 +228,10 @@ async def sceltaRoulette(update, context):
             if 0 <= number <= 36:  #valid choice
                 pass
             else:
-                await update.message.reply_text("You must choose red, black, odd, even or a number between 0 and 36.")
+                await update.message.reply_text("⚠️ You must choose red, black, odd, even or a number between 0 and 36.")
                 return
         except ValueError:
-            await update.message.reply_text("You must choose red, black, odd, even or a number between 0 and 36.")
+            await update.message.reply_text("⚠️ You must choose red, black, odd, even or a number between 0 and 36.")
             return
     amount = context.user_data.get("amount", 0)
     #random choice
@@ -246,10 +246,10 @@ async def sceltaRoulette(update, context):
         else:
             color = "green"
         if color == user_choice :
-            await update.message.reply_text(f"The roulette landed on {result}, it's {color}! You have won {amount*2} credits!")
+            await update.message.reply_text(f"🎰 The roulette landed on {result}, it's {color}! You have won {amount*2} credits! 🎉💰")
             c.execute("UPDATE users SET balance = balance + ? * 2 WHERE user_id=?", (amount, user_id,))
         else:
-            await update.message.reply_text(f"The roulette landed on {result}, it's {color}! You have lost {amount} credits...")
+            await update.message.reply_text(f"🎰 The roulette landed on {result}, it's {color}! You have lost {amount} credits...")
             c.execute("UPDATE users SET balance = balance - ? WHERE user_id=?", (amount, user_id,))
     elif user_choice in ["odd" , "even"] :
         is_even = ((result % 2 ) == 0)
@@ -259,20 +259,20 @@ async def sceltaRoulette(update, context):
             parity = "odd"
         else: parity = "zero"
         if parity == user_choice :
-            await update.message.reply_text(f"The roulette landed on {result}, it's {parity}! You have won {amount*2} credits!")
+            await update.message.reply_text(f"🎰 The roulette landed on {result}, it's {parity}! You have won {amount*2} credits! 🎉💰")
             c.execute("UPDATE users SET balance = balance + ? * 2 WHERE user_id=?", (amount, user_id,))
         elif result == 0:
-            await update.message.reply_text(f"The roulette landed on {result}, it's {parity}! You have lost {amount} credits...")
+            await update.message.reply_text(f"🎰 The roulette landed on {result}, it's {parity}! You have lost {amount} credits...😢 ")
             c.execute("UPDATE users SET balance = balance - ? WHERE user_id=?", (amount, user_id,))
         else:
-            await update.message.reply_text(f"The roulette landed on {result}! You have lost {amount} credits...")
+            await update.message.reply_text(f"🎰 The roulette landed on {result}! You have lost {amount} credits...😢 ")
             c.execute("UPDATE users SET balance = balance - ? WHERE user_id=?", (amount, user_id,))
     else:
         if result == user_choice :
-            await update.message.reply_text(f"The roulette landed on {result}! You have won {amount*35} credits!")
+            await update.message.reply_text(f"🎰 The roulette landed on {result}! You have won {amount*35} credits! 🎉💰")
             c.execute("UPDATE users SET balance = balance + ? * 35 WHERE user_id=?", (amount, user_id,))
         else:
-            await update.message.reply_text(f"The roulette landed on {result}! You have lost {amount} credits...")
+            await update.message.reply_text(f"🎰 The roulette landed on {result}! You have lost {amount} credits...😢 ")
             c.execute("UPDATE users SET balance = balance - ? WHERE user_id=?", (amount, user_id,))
     conn.commit()
     conn.close()
