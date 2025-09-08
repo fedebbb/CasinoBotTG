@@ -14,13 +14,20 @@ Python 3.10+ recommended
 python-telegram-bot library
 
 # ⚡ Features / Available Commands
-**Command**	**Description**
+**Command**	**Description** 
+
 **/start**	Registers the user and shows a welcome message.
+
 **/help**	Displays a list of available commands and instructions.
+
 **/games**	Shows the list of casino games available.
+
 **/bonus**	Gives the user a daily bonus (every 24 hours).
+
 **/balance**	Shows the user's current balance.
+
 **/coinflip**	Play a coin flip game. Usage: /coinflip <amount>
+
 **/roulette**	Play a roulette game. Usage: /roulette <amount> <choice>. Choices: red, black, odd, even, or a number 0-36.
 
 # 🎲 How to Play
