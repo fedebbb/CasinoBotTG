@@ -269,8 +269,8 @@ async def sceltaRoulette(update, context):
             c.execute("UPDATE users SET balance = balance - ? WHERE user_id=?", (amount, user_id,))
     else:
         if result == user_choice :
-            await update.message.reply_text(f"🎰 The roulette landed on {result}! You have won {amount*35} credits! 🎉💰")
-            c.execute("UPDATE users SET balance = balance + ? * 35 WHERE user_id=?", (amount, user_id,))
+            await update.message.reply_text(f"🎰 The roulette landed on {result}! You have won {amount*36} credits! 🎉💰")
+            c.execute("UPDATE users SET balance = balance + ? * 36 WHERE user_id=?", (amount, user_id,))
         else:
             await update.message.reply_text(f"🎰 The roulette landed on {result}! You have lost {amount} credits...😢 ")
             c.execute("UPDATE users SET balance = balance - ? WHERE user_id=?", (amount, user_id,))
