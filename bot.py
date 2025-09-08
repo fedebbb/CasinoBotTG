@@ -11,6 +11,8 @@ load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")  #Telegram API code
 
 SCELTA = range(1)
+SCELTA1 = range(1)
+
 #connection to the database SqlLite
 conn = sqlite3.connect("casino.db")
 c = conn.cursor()
@@ -114,13 +116,13 @@ async def games(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user.first_name
     await context.bot.send_message(
         chat_id=update.effective_chat.id, 
-        text=f"{user}, here is the list of the games: \n/coinflip <import>"
+        text=f"{user}, here is the list of the games: \n- /coinflip <import> \n- /roulette <import>" 
         )
 
 async def coinflip(update: Update, context: ContextTypes.DEFAULT_TYPE):
     #if there arent arguments
     if not context.args:
-        await update.message.reply_text("You have to add the bet! For example: /bet 100")
+        await update.message.reply_text("You have to add the bet! For example: /coinflip 100")
         return
     #if there are more then one argument
     if len(context.args) > 1:
@@ -149,7 +151,7 @@ async def coinflip(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     return SCELTA
 
-async def scelta(update, context):
+async def sceltaFlip(update, context):
     user = update.effective_user.first_name
     user_id = update.effective_chat.id
     user_choice = update.message.text.lower().strip()
@@ -168,6 +170,110 @@ async def scelta(update, context):
     else:
         await update.message.reply_text(f"It's {result}! You have lost {amount} credits...")
         c.execute("UPDATE users SET balance = balance - ? WHERE user_id=?", (amount, user_id,))
+    conn.commit()
+    conn.close()
+    return ConversationHandler.END
+
+async def roulette(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    #if there arent arguments
+    if not context.args:
+        await update.message.reply_text("You have to add the bet! For example: /roulette 100")
+        return
+    #if there are more then one argument
+    if len(context.args) > 1:
+        await update.message.reply_text("Correct use: /roulette <import>")
+        return
+    try:
+        amount = int(context.args[0])  # first argument
+    except ValueError:
+        await update.message.reply_text("The import must be a number!")
+        return
+    user = update.effective_user.first_name
+    user_id = update.effective_chat.id
+    conn = sqlite3.connect("casino.db")
+    c = conn.cursor()
+    c.execute("SELECT balance FROM users WHERE user_id=?", (user_id,))
+    row = c.fetchone()
+    c.close()
+    balance = row[0] #takes the balance
+    if balance < amount:
+        await update.message.reply_text("You don't have enough credits!")
+        return
+    context.user_data["amount"] = amount
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id, 
+        text=f"{user}, place a bet."
+        )
+    return SCELTA
+
+async def sceltaRoulette(update, context):
+    RED_NUMBERS = {
+    1,3,5,7,9,12,14,16,18,
+    19,21,23,25,27,30,32,34,36
+    }
+    BLACK_NUMBERS = {
+        2,4,6,8,10,11,13,15,17,
+        20,22,24,26,28,29,31,33,35
+    }
+
+    user = update.effective_user.first_name
+    user_id = update.effective_chat.id
+    user_choice = update.message.text.lower().strip()
+    valid_choices = ["red", "black", "odd", "even"]
+    if user_choice in valid_choices:
+        pass
+    else:
+        try:
+            number = int(user_choice)
+            if 0 <= number <= 36:  #valid choice
+                pass
+            else:
+                await update.message.reply_text("You must choose red, black, odd, even or a number between 0 and 36.")
+                return
+        except ValueError:
+            await update.message.reply_text("You must choose red, black, odd, even or a number between 0 and 36.")
+            return
+    amount = context.user_data.get("amount", 0)
+    #random choice
+    result = random.randint(0, 36)
+    conn = sqlite3.connect("casino.db")
+    c = conn.cursor()
+    if user_choice in ["red", "black"]:
+        if result in BLACK_NUMBERS:
+            color = "black"
+        elif result in RED_NUMBERS:
+            color = "red"
+        else:
+            color = "green"
+        if color == user_choice :
+            await update.message.reply_text(f"The roulette landed on {result}, it's {color}! You have won {amount*2} credits!")
+            c.execute("UPDATE users SET balance = balance + ? * 2 WHERE user_id=?", (amount, user_id,))
+        else:
+            await update.message.reply_text(f"The roulette landed on {result}, it's {color}! You have lost {amount} credits...")
+            c.execute("UPDATE users SET balance = balance - ? WHERE user_id=?", (amount, user_id,))
+    elif user_choice in ["odd" , "even"] :
+        is_even = ((result % 2 ) == 0)
+        if is_even and result != 0:
+            parity = "even"
+        elif result!= 0:
+            parity = "odd"
+        else: parity = "zero"
+        if parity == user_choice :
+            await update.message.reply_text(f"The roulette landed on {result}, it's {parity}! You have won {amount*2} credits!")
+            c.execute("UPDATE users SET balance = balance + ? * 2 WHERE user_id=?", (amount, user_id,))
+        elif result == 0:
+            await update.message.reply_text(f"The roulette landed on {result}, it's {parity}! You have lost {amount} credits...")
+            c.execute("UPDATE users SET balance = balance - ? WHERE user_id=?", (amount, user_id,))
+        else:
+            await update.message.reply_text(f"The roulette landed on {result}! You have lost {amount} credits...")
+            c.execute("UPDATE users SET balance = balance - ? WHERE user_id=?", (amount, user_id,))
+    else:
+        if result == user_choice :
+            await update.message.reply_text(f"The roulette landed on {result}! You have won {amount*35} credits!")
+            c.execute("UPDATE users SET balance = balance + ? * 35 WHERE user_id=?", (amount, user_id,))
+        else:
+            await update.message.reply_text(f"The roulette landed on {result}! You have lost {amount} credits...")
+            c.execute("UPDATE users SET balance = balance - ? WHERE user_id=?", (amount, user_id,))
     conn.commit()
     conn.close()
     return ConversationHandler.END
@@ -200,11 +306,20 @@ if __name__ == '__main__':
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("coinflip", coinflip)],
         states={
-            SCELTA: [MessageHandler(filters.TEXT & ~filters.COMMAND, scelta)],
+            SCELTA: [MessageHandler(filters.TEXT & ~filters.COMMAND, sceltaFlip)],
         },
         fallbacks = [],
     )
     application.add_handler(conv_handler)
+
+    conv_handler2 = ConversationHandler(
+        entry_points=[CommandHandler("roulette", roulette)],
+        states={
+            SCELTA1: [MessageHandler(filters.TEXT & ~filters.COMMAND, sceltaRoulette)],
+        },
+        fallbacks = [],
+    )
+    application.add_handler(conv_handler2)
 
     unknown_handler = MessageHandler(filters.TEXT, unknown)
     application.add_handler(unknown_handler)
