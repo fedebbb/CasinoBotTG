@@ -1,4 +1,4 @@
-# CasinoBotTG 🎰
+# 🎰 CasinoBotTG 
 
 CasinoBotTG is a Telegram bot that emulates casino games, built using Python and the python-telegram-bot library.
 Users can play games like coin flip and roulette, track their balance, and receive daily bonuses.
