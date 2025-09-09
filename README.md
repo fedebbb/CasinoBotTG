@@ -28,7 +28,9 @@ python-telegram-bot library
 
 **/coinflip**	Play a coin flip game. Usage: /coinflip <amount>
 
-**/roulette**	Play a roulette game. Usage: /roulette <amount> <choice>. Choices: red, black, odd, even, or a number 0-36.
+**/roulette**	Play a roulette game. Usage: /roulette <amount>
+
+**/blackjack** Play a blackjack game. Usage: /blackjack <amount>
 
 # 🎲 How to Play
 **Coin Flip**
