@@ -21,6 +21,7 @@ c = conn.cursor()
 c.execute("""
 CREATE TABLE IF NOT EXISTS users (
     user_id INTEGER PRIMARY KEY,
+    first_name TEXT,
     balance INTEGER DEFAULT 1000,
     last_bonus TIMESTAMP DEFAULT '2000-01-01T00:00:00'
     )
@@ -39,7 +40,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user.first_name
     conn = sqlite3.connect("casino.db")
     c = conn.cursor()
-    c.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)", (user_id,))
+    c.execute("INSERT OR IGNORE INTO users (user_id, first_name) VALUES (?,?)", (user_id, user,))
     conn.commit()
     conn.close()
     keyboard = [                #start buttons
@@ -60,7 +61,7 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user.first_name
     await context.bot.send_message(
         chat_id=update.effective_chat.id, 
-        text=f"{user}, here is the list of the commands: \n/bonus : take your daily bonus \n/balance : see your current balance \n/games: see the games"
+        text=f"{user}, here is the list of the commands: \n/bonus : take your daily bonus \n/balance : see your current balance \n/games: see the games \n/leaderboard: see the top10 players"
         )
 
 #gives the bonus every 24 hours
@@ -281,7 +282,7 @@ async def sceltaRoulette(update, context):
     return ConversationHandler.END
 
 async def blackjack(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    suits = ["Spades", "Hearts", "Diamonds", "Clubs"] 
+    suits = ["Spades♠️", "Hearts♥️", "Diamonds♦️", "Clubs♣️"] 
     ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King"]
 
     #52 cards deck
@@ -483,6 +484,25 @@ async def sceltaBlackjack(update, context):
         conn.close()
         return ConversationHandler.END
 
+async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user.first_name
+    conn = sqlite3.connect("casino.db")
+    c = conn.cursor()
+    c.execute("SELECT user_id, first_name, balance FROM users ORDER BY balance DESC LIMIT 10")
+    rows = c.fetchall()
+    conn.close()
+    if not rows:   #no users
+        await update.message.reply_text("📊 No players in the leaderboard yet!")
+        return
+    eaderboard_text = "🏆 Top 10 Players 🏆\n\n"
+    leaderboard_text = ""
+    for i, row in enumerate(rows, start=1):
+        username = row[0] if row[0] else "Unknown"
+        balance = row[2]
+        name = row[1]
+        leaderboard_text += f"{i}. {name} : 💰 {balance} credits\n"
+    await update.message.reply_text(leaderboard_text)
+
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
         chat_id=update.effective_chat.id, 
@@ -507,6 +527,9 @@ if __name__ == '__main__':
 
     games_handler = CommandHandler('games', games)
     application.add_handler(games_handler)
+
+    leaderboard_handler = CommandHandler('leaderboard', leaderboard)
+    application.add_handler(leaderboard_handler)
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("coinflip", coinflip)],

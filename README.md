@@ -26,6 +26,8 @@ python-telegram-bot library
 
 **/balance**	Shows the user's current balance.
 
+**/leaderboard** Shows the Top10 players (order by balance)
+
 **/coinflip**	Play a coin flip game. Usage: /coinflip <amount>
 
 **/roulette**	Play a roulette game. Usage: /roulette <amount>
