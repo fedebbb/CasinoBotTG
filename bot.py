@@ -494,8 +494,7 @@ async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not rows:   #no users
         await update.message.reply_text("📊 No players in the leaderboard yet!")
         return
-    eaderboard_text = "🏆 Top 10 Players 🏆\n\n"
-    leaderboard_text = ""
+    leaderboard_text = "🏆 Top 10 Players 🏆\n\n"
     for i, row in enumerate(rows, start=1):
         username = row[0] if row[0] else "Unknown"
         balance = row[2]
